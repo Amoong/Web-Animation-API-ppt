@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>Web Animation API</title>
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/white.css">
+
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h1>Web Animation API</h1>
+			</section>
+			<section>
+				<h2>Web Animation API?</h2>
+
+				@keyframe 과 requestAnimationFrame() 의 <br>
+				아쉬운 점을 해결해 주는 API
+			</section>
+			<section>
+				<h2>어떤 아쉬운 점을 해결해 주나요?</h2>
+			</section>
+			<section>
+				<section data-markdown>
+					<script type="text/template">
+						## `@keyframe`
+	
+						- 세밀한 조정 불가능 <!-- .element: class="fragment" data-fragment-index="1" -->
+					</script>
+				</section>
+				<section>
+					<div class="example1">
+						<div class="box1" />
+					</div>
+				</section>
+			</section>
+			<section>
+				<section data-markdown>
+					<script type="text/template">
+						## `requestAnimationFrame()`
+	
+						- 많은 코드양 <!-- .element: class="fragment" data-fragment-index="1" -->
+						- 콜스택 점유 <!-- .element: class="fragment" data-fragment-index="2" -->
+					</script>
+				</section>
+				<section>
+					<div class="example2">
+						<div class="box2" />
+					</div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript []
+						const box2 = document.querySelector(".box2");
+
+						const duration = 2000; 	// 2초
+						const length = 200;			// 200px
+						const pxPerMs = length / duration; // ms 당 이동 픽셀
+
+						let isAnimationStopped = false;
+						let prevTimeStamp = 0;
+						let direction = 1;
+						let xPos = 0;
+
+						const boxAni2 = (timeStamp) => {
+							if (isAnimationStopped) {
+								prevTimeStamp = 0;
+								return;
+							}
+
+							if (prevTimeStamp === 0) {
+								prevTimeStamp = timeStamp;
+							}
+
+							let adder = (timeStamp - prevTimeStamp) * pxPerMs
+							prevTimeStamp = timeStamp
+
+							if (100 <= xPos) {
+								direction = -1;
+							} else if (xPos <= -100) {
+								direction = 1;
+							}
+
+							xPos += adder * direction;
+
+							box2.style.transform = `translateX(${xPos}px)`;
+
+							requestAnimationFrame(boxAni2);
+						}
+
+						requestAnimationFrame(boxAni2);
+
+						box2.addEventListener("mouseover", () => {
+							isAnimationStopped = true
+						})
+						box2.addEventListener("mouseleave", () => {
+							isAnimationStopped = false
+							requestAnimationFrame(boxAni2);
+						})
+						```
+					</script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript []
+						const box1 = document.querySelector(".box1");
+
+						const boxAni1 = box1.animate([
+							{ transform: "translateX(-100px)" },
+							{ transform: "translateX(100px)" },
+						], {
+							duration: 2000,
+							iterations: Infinity,
+							direction: "alternate",
+							fill: "backwards"
+						})
+				
+						box1.addEventListener("mouseover", () => boxAni1.pause())
+						box1.addEventListener("mouseleave", () => boxAni1.play())
+						```
+					</script>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>기본 사용 방법</h2>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript [1|3-6|8-13|15|17-18]
+						const box1 = document.querySelector(".box1");
+
+						const keyframes = [
+							{ transform: "translateX(-100px)" },
+							{ transform: "translateX(100px)" },
+						]
+
+						const options = {
+							duration: 2000,
+							iterations: Infinity,
+							direction: "alternate",
+							fill: "backwards"
+						}
+
+						const boxAni1 = box1.animate(keyframes, options)
+				
+						box1.addEventListener("mouseover", () => boxAni1.pause())
+						box1.addEventListener("mouseleave", () => boxAni1.play())
+						```
+					</script>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>애니메이션 그룹 제어</h2>
+				</section>
+				<section>
+					<div class="bar-container"></div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript [1-2|4-9|11-14|16-22|24-26]
+						const barContainer = document.querySelector('.bar-container');
+						const bars = [];
+
+						for (let i = 0; i < 30; i++) {
+							const bar = document.createElement('div');
+							bar.classList.add('bar');
+							barContainer.append(bar);
+							bars.push(bar);
+						}
+				
+						const keyframes = [
+							{ transform: 'scaleY(0)' },
+							{ transform: 'scaleY(1)' }
+						];
+				
+						const options = {
+							duration: 3000,
+							iterations: Infinity,
+							direction: 'alternate',
+							fill: "backwards",
+							easing: 'ease-in-out'
+						};
+				
+						bars.forEach((bar, index) => {
+							bar.animate(keyframes, { ...options, delay: index * 200 });
+						});
+						```
+					</script>
+				</section>
+				<section>
+					<div class="bar-container2"></div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						https://cdnjs.cloudflare.com/ajax/libs/web-animations/2.3.2/web-animations-next.min.js
+					</script>
+				</section>
+				<section data-markdown="">
+					<script type="text/template">
+						```javascript
+						bars.forEach((bar, index) => {
+							bar.animate(keyframes, { ...options, delay: index * 200 });
+						});
+						```
+
+						```javascript [1|3-7|9-10|12-13]
+						const effects = [];
+
+						bars.forEach((bar, index) => {
+							const newOptions = { ...options, delay: index * 200 };
+							const effect = new KeyframeEffect(bar, keyframes, newOptions);
+							effects.push(effect);
+						});
+
+						const groupEffect = new GroupEffect(effects);
+						const animations = document.timeline.play(groupEffect);
+
+						barContainer.onmouseenter = () => animations.pause()
+						barContainer.onmouseleave = () => animations.play()
+						```
+					</script>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>순차 재생</h2>
+				</section>
+				<section>
+					<div class="bar-container3"></div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript
+						bars.forEach((bar, index) => {
+							bar.animate(keyframes, { ...options, delay: index * 200 });
+						});
+						```
+
+						```javascript [1-6|8-12|14-15]
+						const options = {
+							duration: 200,
+							// iterations: Infinity,
+							fill: 'backwards',
+							easing: 'ease-in-out'
+						};
+		
+						const effects = [];
+						bars.forEach((bar, index) => {
+							const effect = new KeyframeEffect(bar, keyframes, options);
+							effects.push(effect);
+						});
+		
+						const sequenceEffect = new SequenceEffect(effects);
+						const animation = document.timeline.play(sequenceEffect);
+						```
+					</script>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>경로 추적</h2>
+				</section>
+				<section>
+					<div class="center-container">
+						<div class="track">
+							<div class="car"></div>
+							<svg class="path-svg" viewBox="0 0 674.7 531.36">
+								<path class="path"
+									d="m.5,443.85V52.36C.5,23.72,23.72.5,52.36.5s51.86,23.22,51.86,51.86v286.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v426.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v226.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86v-59.96c0-28.64,23.22-51.86,51.86-51.86" />
+							</svg>
+						</div>
+					</div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Html
+
+						```Html [1,7|2|3,6|4-5]
+						<div class="track">
+							<div class="car"></div>
+							<svg class="path-svg" viewBox="0 0 674.7 531.36">
+								<path class="path"
+									d="m.5,443.85V52.36C.5,23.72,23.72.5,52.36.5s51.86,23.22,51.86,51.86v286.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v426.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v226.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86v-59.96c0-28.64,23.22-51.86,51.86-51.86" />
+							</svg>
+						</div>
+						```
+					</script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### CSS
+
+						```Css [3-4|13-15]
+						.track {
+							position: relative;
+							/* svg viewbox랑 같은 크기로 */
+							width: 675px;
+						}
+
+						.car {
+							position: absolute;
+							border-radius: 3px;
+							width: 10px;
+							height: 20px;
+							background: dodgerblue;
+							offset-path: path("m.5,443.85V52.36C.5,23.72,23.72.5,52.36.5s51.86,23.22,51.86,51.86v286.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v426.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86V52.36c0-28.64,23.22-51.86,51.86-51.86s51.86,23.22,51.86,51.86v226.64c0,28.64,23.22,51.86,51.86,51.86s51.86-23.22,51.86-51.86v-59.96c0-28.64,23.22-51.86,51.86-51.86");
+							offset-rotate: auto 90deg;
+							offset-distance: 0;
+						}
+						```
+					</script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### JS
+
+						```javascript [1-2|6-7|15|17-19]
+						const car = document.querySelector(".car");
+						const track = document.querySelector(".track")
+
+						const animation = car.animate(
+							[
+								{ offsetDistance: 0 },
+								{ offsetDistance: "100%" }
+							],
+							{
+								duration: 3000,
+								iterations: Infinity
+							}
+						)
+
+						animation.pause();
+
+						track.addEventListener("click", () => {
+							animation.playState === "paused" ? animation.play() : animation.pause();
+						})
+						```
+					</script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### JS v2
+
+						```javascript [1-7|9|11-13]
+						const effect = new KeyframeEffect(car, [
+							{ offsetDistance: 0 },
+							{ offsetDistance: "100%" }
+						], {
+							duration: 3000,
+							iterations: Infinity
+						});
+
+						const ani = new Animation(effect, document.timeline)
+
+						track.addEventListener("click", () => {
+							ani.playState === "running" ? ani.pause() : ani.play()
+						})
+						```
+					</script>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>주의 사항</h2>
+				</section>
+				<section>
+					<div class="example1">
+						<div class="persisting-box1" />
+					</div>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript [7]
+						const box = document.querySelector(".persisting-box");
+
+						box.animate([
+							{ transform: "translateX(200px)" }
+						], {
+							duration: 1000,
+							fill: "forwards",
+						})
+						```
+					</script>
+				</section>
+				<section>
+					<img src="./img.png" alt="" srcset="">
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						```javascript [3|10|12|14]
+						const box = document.querySelector(".persisting-box2");
+
+						const animation = box.animate([
+							{ transform: "translateX(200px)" }
+						], {
+							duration: 1000,
+							fill: "forwards",
+						})
+
+						await animation.finished;
+
+						animation.commitStyles();
+
+						animation.cancel();
+						```
+					</script>
+				</section>
+				<section>
+					<div class="example1">
+						<div class="persisting-box2" />
+					</div>
+				</section>
+			</section>
+			<section>
+				<h2>Q&A</h2>
+			</section>
+		</div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="plugin/notes/notes.js"></script>
+	<script src="plugin/markdown/markdown.js"></script>
+	<script src="plugin/highlight/highlight.js"></script>
+	<script>
+		// More info about initialization & config:
+		// - https://revealjs.com/initialization/
+		// - https://revealjs.com/config/
+		Reveal.initialize({
+			hash: true,
+
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+		});
+	</script>
+	<script>
+		const box1 = document.querySelector(".box1");
+
+		const boxAni1 = box1.animate([
+			{ transform: "translateX(-100px)" },
+			{ transform: "translateX(100px)" },
+		], {
+			duration: 2000,
+			iterations: Infinity,
+			direction: "alternate",
+			fill: "backwards"
+		})
+
+		box1.addEventListener("mouseover", () => boxAni1.pause())
+		box1.addEventListener("mouseleave", () => boxAni1.play())
+	</script>
+	<script>
+		const box2 = document.querySelector(".box2");
+
+		const duration = 2000; 	// 2초
+		const length = 200;			// 200px
+		const pxPerMs = length / duration; // ms 당 이동 픽셀
+
+		let isAnimationStopped = false;
+		let prevTimeStamp = 0;
+		let direction = 1;
+		let xPos = 0;
+
+		const boxAni2 = (timeStamp) => {
+			if (isAnimationStopped) {
+				prevTimeStamp = 0;
+				return;
+			}
+
+			if (prevTimeStamp === 0) {
+				prevTimeStamp = timeStamp;
+			}
+
+			let adder = (timeStamp - prevTimeStamp) * pxPerMs
+			prevTimeStamp = timeStamp
+
+			if (100 <= xPos) {
+				direction = -1;
+			} else if (xPos <= -100) {
+				direction = 1;
+			}
+
+			xPos += adder * direction;
+
+			box2.style.transform = `translateX(${xPos}px)`;
+
+			requestAnimationFrame(boxAni2);
+		}
+
+		requestAnimationFrame(boxAni2);
+
+		box2.addEventListener("mouseover", () => {
+			isAnimationStopped = true
+		})
+		box2.addEventListener("mouseleave", () => {
+			isAnimationStopped = false
+			requestAnimationFrame(boxAni2);
+		})
+	</script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/web-animations/2.3.2/web-animations-next.min.js"></script>
+	<script>
+			(function () {
+				const barContainer = document.querySelector('.bar-container');
+				const bars = [];
+
+				for (let i = 0; i < 30; i++) {
+					const bar = document.createElement('div');
+					bar.classList.add('bar');
+					barContainer.append(bar);
+					bars.push(bar);
+				}
+
+				const keyframes = [
+					{ transform: 'scaleY(0)' },
+					{ transform: 'scaleY(1)' }
+				];
+
+				const options = {
+					duration: 3000,
+					iterations: Infinity,
+					direction: 'alternate',
+					fill: "backwards",
+					easing: 'ease-in-out'
+				};
+
+				bars.forEach((bar, index) => {
+					bar.animate(keyframes, { ...options, delay: index * 200 });
+				});
+			})()
+	</script>
+	<script>
+			(function () {
+				const barContainer = document.querySelector('.bar-container2');
+				const bars = [];
+				for (let i = 0; i < 30; i++) {
+					const bar = document.createElement('div');
+					bar.classList.add('bar');
+					barContainer.append(bar);
+					bars.push(bar);
+				}
+
+				const keyframes = [
+					{ transform: 'scaleY(0)' },
+					{ transform: 'scaleY(1)' }
+				];
+
+				const options = {
+					duration: 3000,
+					iterations: Infinity,
+					direction: 'alternate',
+					fill: 'backwards',
+					easing: 'ease-in-out'
+				};
+
+				const effects = [];
+				bars.forEach((bar, index) => {
+					const newOptions = { ...options, delay: index * 200 };
+					const effect = new KeyframeEffect(bar, keyframes, newOptions);
+					effects.push(effect);
+				});
+
+				const groupEffect = new GroupEffect(effects);
+				const animations = document.timeline.play(groupEffect);
+
+				barContainer.onmouseenter = () => animations.pause()
+				barContainer.onmouseleave = () => animations.play()
+			})()
+	</script>
+	<script>
+			(function () {
+				const barContainer = document.querySelector('.bar-container3');
+				const bars = [];
+				let bar;
+				for (let i = 0; i < 30; i++) {
+					bar = document.createElement('div');
+					bar.classList.add('bar');
+					barContainer.append(bar);
+					bars.push(bar);
+				}
+
+				const keyframes = [
+					{ transform: 'scaleY(0)' },
+					{ transform: 'scaleY(1)' }
+				];
+
+				const options = {
+					duration: 200,
+					// iterations: Infinity,
+					fill: 'backwards',
+					easing: 'ease-in-out'
+				};
+
+				const effects = [];
+				bars.forEach((bar, index) => {
+					const effect = new KeyframeEffect(bar, keyframes, options);
+					effects.push(effect);
+				});
+
+				const sequenceEffect = new SequenceEffect(effects);
+				const animation = document.timeline.play(sequenceEffect);
+			})()
+	</script>
+	<script>
+			(function () {
+				const car = document.querySelector(".car");
+				const track = document.querySelector(".track")
+
+				const effect = new KeyframeEffect(car, [
+					{ offsetDistance: 0 },
+					{ offsetDistance: "100%" }
+				], {
+					duration: 3000,
+					iterations: Infinity
+				});
+
+				const ani = new Animation(effect, document.timeline)
+
+				// const animation = car.animate(
+				// 	[
+				// 		{ offsetDistance: 0 },
+				// 		{ offsetDistance: "100%" }
+				// 	],
+				// 	{
+				// 		duration: 3000,
+				// 		iterations: Infinity
+				// 	}
+				// )
+
+				// animation.pause();
+
+				track.addEventListener("click", () => {
+					ani.playState === "running" ? ani.pause() : ani.play()
+				})
+			})()
+	</script>
+	<script>
+			(function () {
+				const box = document.querySelector(".persisting-box1");
+
+				box.animate([
+					{ transform: "translateX(200px)" }
+				], {
+					duration: 1000,
+					fill: "forwards",
+				})
+			})()
+	</script>
+	<script>
+			(async function () {
+				const box = document.querySelector(".persisting-box2");
+
+				const animation = box.animate([
+					{ transform: "translateX(200px)" }
+				], {
+					duration: 1000,
+					fill: "forwards",
+				})
+
+				await animation.finished;
+
+				animation.commitStyles();
+
+				animation.cancel();
+			})()
+	</script>
+</body>
+
+</html>
